@@ -12,7 +12,7 @@ The aim of this project was to use a training dataset containing data from accel
 
 ## Loading Data and Libraries
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(data.table)
@@ -26,7 +26,9 @@ pml_testing <- read.csv(file="pml-testing.csv", header = TRUE)
 ## (Brief) Exploratory analysis
 
 A simple view of the training dataset notes that there are 159 columns in the datasets (plus target variable CLASSE).  However within those 159 columns are variables that are not useful for machine learning.
+
 1. Columns where most of the rows within the column are blank (for example kurtosis_roll_belt). Values in these columns only appear periodically.  The rows where values appear in these mostly blank columns are filled for all 159 columns.  However, in the testing set, there are no values in these same columns.  Therefore, the values in these columns serve no use in predicting CLASSE.  Therefore I decided to identify all columns that have NA or blanks and remove these columns.
+
 2. The first 7 Columns of both the testing and training datasets are identifier columns.  They contain details about the user and when they did the exercise.  If these columns are used in training a model they will overfit the model.  I have therefore removed these columns from the datasets.
 
 ```{r training_set}

@@ -200,10 +200,46 @@ summary {
 </div>
 <div id="loading-data-and-libraries" class="section level2">
 <h2>Loading Data and Libraries</h2>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: 'dplyr'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(data.table)</code></pre>
+<pre><code>## 
+## Attaching package: 'data.table'</code></pre>
+<pre><code>## The following objects are masked from 'package:dplyr':
+## 
+##     between, first, last</code></pre>
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: 'lubridate'</code></pre>
+<pre><code>## The following objects are masked from 'package:data.table':
+## 
+##     hour, isoweek, mday, minute, month, quarter, second, wday, week,
+##     yday, year</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     date, intersect, setdiff, union</code></pre>
+<pre class="r"><code>setwd('../practical_machine_learning')
+pml_training &lt;- read.csv(file=&quot;pml-training.csv&quot;, header = TRUE)
+pml_testing &lt;- read.csv(file=&quot;pml-testing.csv&quot;, header = TRUE)</code></pre>
 </div>
 <div id="brief-exploratory-analysis" class="section level2">
 <h2>(Brief) Exploratory analysis</h2>
-<p>A simple view of the training dataset notes that there are 159 columns in the datasets (plus target variable CLASSE). However within those 159 columns are variables that are not useful for machine learning. 1. Columns where most of the rows within the column are blank (for example kurtosis_roll_belt). Values in these columns only appear periodically. The rows where values appear in these mostly blank columns are filled for all 159 columns. However, in the testing set, there are no values in these same columns. Therefore, the values in these columns serve no use in predicting CLASSE. Therefore I decided to identify all columns that have NA or blanks and remove these columns. 2. The first 7 Columns of both the testing and training datasets are identifier columns. They contain details about the user and when they did the exercise. If these columns are used in training a model they will overfit the model. I have therefore removed these columns from the datasets.</p>
+<p>A simple view of the training dataset notes that there are 159 columns in the datasets (plus target variable CLASSE). However within those 159 columns are variables that are not useful for machine learning.</p>
+<ol style="list-style-type: decimal">
+<li><p>Columns where most of the rows within the column are blank (for example kurtosis_roll_belt). Values in these columns only appear periodically. The rows where values appear in these mostly blank columns are filled for all 159 columns. However, in the testing set, there are no values in these same columns. Therefore, the values in these columns serve no use in predicting CLASSE. Therefore I decided to identify all columns that have NA or blanks and remove these columns.</p></li>
+<li><p>The first 7 Columns of both the testing and training datasets are identifier columns. They contain details about the user and when they did the exercise. If these columns are used in training a model they will overfit the model. I have therefore removed these columns from the datasets.</p></li>
+</ol>
 <pre class="r"><code>head(pml_training, 5)</code></pre>
 <pre><code>##   X user_name raw_timestamp_part_1 raw_timestamp_part_2   cvtd_timestamp
 ## 1 1  carlitos           1323084231               788290 05/12/2011 11:23
