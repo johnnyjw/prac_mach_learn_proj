@@ -1,0 +1,109 @@
+---
+title: 'Practical Machine Learning: Prediction Assignment'
+author: "Jonathan wharton"
+date: "5 January 2021"
+output: html_document
+
+Details: Creating a model that predicts the type of bar bell lift that participants do.
+---
+
+## Aim
+The aim of this project was to use a training dataset containing data from accelerometers on the participant and the barbells they were using to train a model that can predict the type of barbell lift (classe) that the participant performed.
+
+## Loading Data and Libraries
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(data.table)
+library(caret)
+library(lubridate)
+setwd('../practical_machine_learning')
+pml_training <- read.csv(file="pml-training.csv", header = TRUE)
+pml_testing <- read.csv(file="pml-testing.csv", header = TRUE)
+```
+
+## (Brief) Exploratory analysis
+
+A simple view of the training dataset notes that there are 159 columns in the datasets (plus target variable CLASSE).  However within those 159 columns are variables that are not useful for machine learning.
+
+1. Columns where most of the rows within the column are blank (for example kurtosis_roll_belt). Values in these columns only appear periodically.  The rows where values appear in these mostly blank columns are filled for all 159 columns.  However, in the testing set, there are no values in these same columns.  Therefore, the values in these columns serve no use in predicting CLASSE.  Therefore I decided to identify all columns that have NA or blanks and remove these columns.
+
+2. The first 7 Columns of both the testing and training datasets are identifier columns.  They contain details about the user and when they did the exercise.  If these columns are used in training a model they will overfit the model.  I have therefore removed these columns from the datasets.
+
+```{r training_set}
+head(pml_training, 5)
+```
+
+```{r testing_set}
+head(pml_testing, 5)
+```
+
+```{r processing}
+na_count <- function(x){sum(is.na(x))}
+na_frame <- data.frame(lapply(pml_training, na_count))
+blank_count <- function(x){sum(x=="")}
+blank_frame <- data.frame(lapply(pml_training, blank_count))
+
+collected_details <- tibble(
+  the_cols = names(pml_training),
+  na_cols = as.numeric(as.vector(na_frame[1,])),
+  blank_cols = as.numeric(as.vector(blank_frame[1,]))
+)
+
+no_missing_cols <- collected_details[collected_details$na_cols==0 & collected_details$blank_cols==0,]
+
+# get the list of columns and remove the first few which are identifiers
+col_list <- tail(no_missing_cols$the_cols, -7)
+
+#only include cols that have values for all rows
+pml_training <- pml_training[, col_list]
+pml_testing <- pml_testing[, head(col_list, -1)]
+```
+
+## Model Training and Crossvalidation
+I chose to do a k-fold crossvalidation with 10 folds.
+I chose this as a balanced way of training and evaluating the model that would not require excessive amounts of time and computing power.
+
+For the Model I chose a Random Forest classification.  This method has the advantage of not requiring normalisation of values and has some protection against overfitting.  One of the disadvantages is that it does require some computing power and time for training.  However on my laptop this is about 30 minutes, so it is manageable.
+
+```{r model}
+# seed set for demonstration purposes
+set.seed(125)
+
+# define training control
+train_control<- trainControl(method="cv", number=10, savePredictions = TRUE)
+
+# train the model 
+model<- train(classe~., data=pml_training, trControl=train_control, method="rf")
+```
+
+## Evaluation
+To evaluate the model, I have run a confusion matrix on the predicted and actual values from the k-fold crossvalidation.
+
+```{r evaluation}
+confusionMatrix<- confusionMatrix(model$pred$pred,model$pred$obs)
+outSampErr <- round((1-confusionMatrix$overall[["Accuracy"]]) * 100, digits = 2)
+
+confusionMatrix
+```
+
+The out of sample error from the model is `r outSampErr`%.
+(I have calculated this as 1-accuracy from the confusion matrix)
+
+## Prediction on Test Set
+The following are the predictions on the test dataset
+
+```{r prediction}
+predList <- predict(model, pml_testing)
+predList
+```
+
+## Aknowledgements
+
+The data used for this project was generously provided by the Groupware team.  Details can be found here:
+http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har
+
+Published here:
+Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
+Cited by 2 (Google Scholar)
